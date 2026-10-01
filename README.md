@@ -48,6 +48,7 @@ http://localhost:4021/dashboard
 Contracts: `cd contracts && forge build` (solc 0.8.26). Deploy: `forge create` with `--broadcast`.
 
 ## Links
+- Live dashboard: https://bursar-fw002xskn-the-web3-wizards-projects.vercel.app/ (append `?api=<merchant-url>` to point at a live merchant)
 - Colosseum submission: *(added at submission)*
 - Demo video: *(added Day 9)*
 - Registry contract (Moderato): `0xe138ED601fb64181cF38987a13bfbC94Fcf51066`
