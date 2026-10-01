@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bursar — agent billing, settled on Tempo</title>
+<style>
+  :root{
+    --ink:#16211D; --ink-soft:#3D4A45; --ink-faint:#6E7B74;
+    --paper:#F7F5EF; --paper-deep:#EFEBE0; --card:#FFFFFF;
+    --brass:#A97E1F; --brass-deep:#8A6414;
+    --paid:#1E7A46; --paid-bg:#E3F2E8;
+    --open:#A85B12; --open-bg:#F9EDDC;
+    --rule:#DDD8C9; --danger:#B3261E;
+    --serif:Georgia,'Times New Roman',serif;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5}
+  .shell{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
+  /* ---- rail ---- */
+  .rail{background:var(--ink);color:#EDE9DC;padding:28px 20px;display:flex;flex-direction:column;gap:8px}
+  .brand{font-family:var(--serif);font-size:26px;letter-spacing:.5px;color:#fff;margin:0 0 2px}
+  .brand em{color:var(--brass);font-style:normal}
+  .tag{font-size:13px;color:#A9B3AC;margin:0 0 26px}
+  .nav a{display:flex;align-items:center;gap:10px;color:#C9CFC7;text-decoration:none;padding:10px 12px;border-radius:10px;font-size:15px;min-height:44px}
+  .nav a:hover{background:#223029}
+  .nav a.on{background:#223029;color:#fff}
+  .nav svg{width:18px;height:18px;flex:none}
+  .rail .foot{margin-top:auto;font-size:12.5px;color:#8A948D;line-height:1.6}
+  .net{display:inline-block;margin-top:8px;padding:4px 10px;border:1px solid #3A4A43;border-radius:999px;font-size:12px;color:#C9CFC7}
+  .net i{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4CC38A;margin-right:6px}
+  /* ---- main ---- */
+  main{padding:32px 36px 64px;max-width:1180px}
+  .topbar{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+  h1{font-family:var(--serif);font-weight:600;font-size:30px;margin:0}
+  .sub{color:var(--ink-soft);margin:4px 0 24px;font-size:15px}
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .btn{font:inherit;font-size:14.5px;padding:10px 18px;min-height:44px;border-radius:12px;border:1px solid var(--rule);background:var(--card);color:var(--ink);cursor:pointer}
+  .btn:hover{border-color:var(--ink-soft)}
+  .btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn.primary:hover{background:#223029}
+  .btn:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+  .switch{display:inline-flex;align-items:center;gap:10px;font-size:14.5px;color:var(--ink-soft);cursor:pointer;min-height:44px;padding:6px 4px}
+  .switch input{width:20px;height:20px;accent-color:var(--brass)}
+  /* ---- figures ---- */
+  .figures{display:grid;grid-template-columns:repeat(4,1fr);gap:0;background:var(--card);border:1px solid var(--rule);border-radius:16px;overflow:hidden;margin:22px 0 28px}
+  .fig{padding:20px 22px;border-left:1px solid var(--rule)}
+  .fig:first-child{border-left:none}
+  .fig .k{font-size:13.5px;color:var(--ink-faint);margin-bottom:6px}
+  .fig .v{font-family:var(--serif);font-size:32px;line-height:1.1;font-variant-numeric:tabular-nums}
+  .fig .v small{font-size:16px;color:var(--ink-faint)}
+  .fig .d{font-size:13px;margin-top:6px;color:var(--ink-faint)}
+  .fig .d b{color:var(--paid);font-weight:600}
+  /* ---- ledger ---- */
+  .panel{background:var(--card);border:1px solid var(--rule);border-radius:16px;overflow:hidden}
+  .panel header{padding:18px 22px;border-bottom:1px solid var(--rule);display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .panel header h2{font-family:var(--serif);font-size:19px;margin:0;font-weight:600}
+  .panel header p{margin:0;font-size:13.5px;color:var(--ink-faint)}
+  table{width:100%;border-collapse:collapse;font-size:14.5px}
+  th{text-align:left;font-weight:600;font-size:12.5px;letter-spacing:.04em;color:var(--ink-faint);padding:12px 22px;border-bottom:1px solid var(--rule)}
+  td{padding:14px 22px;border-bottom:1px solid var(--paper-deep);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tbody tr{cursor:pointer}
+  tbody tr:hover{background:#FBFAF5}
+  .num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+  th.num{text-align:right}
+  .id{font-family:var(--mono);font-size:12.5px;color:var(--ink-soft)}
+  .pill{display:inline-block;padding:4px 12px;border-radius:999px;font-size:13px;font-weight:600}
+  .pill.paid{background:var(--paid-bg);color:var(--paid)}
+  .pill.open{background:var(--open-bg);color:var(--open)}
+  .empty{padding:36px 22px;color:var(--ink-faint);font-size:14.5px}
+  .empty strong{color:var(--ink)}
+  @keyframes flash{from{background:#F3EACB}to{background:transparent}}
+  tr.fresh{animation:flash 1.6s ease-out}
+  /* ---- feed ---- */
+  .grid2{display:grid;grid-template-columns:1fr 320px;gap:24px;margin-top:24px;align-items:start}
+  .feed{list-style:none;margin:0;padding:6px 22px 18px}
+  .feed li{padding:12px 0;border-bottom:1px dashed var(--rule);font-size:14px}
+  .feed li:last-child{border-bottom:none}
+  .feed time{color:var(--ink-faint);font-size:12.5px;display:block}
+  .feed .amt{font-variant-numeric:tabular-nums;font-weight:600}
+  /* ---- modal ---- */
+  .scrim{position:fixed;inset:0;background:rgba(22,33,29,.5);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+  .scrim.show{display:flex}
+  .modal{background:var(--paper);border-radius:18px;max-width:620px;width:100%;max-height:88vh;overflow:auto;padding:28px 30px;position:relative}
+  .modal h3{font-family:var(--serif);font-size:22px;margin:0 0 4px}
+  .modal .mono{font-family:var(--mono);font-size:12.5px;color:var(--ink-soft);word-break:break-all}
+  .x{position:absolute;top:14px;right:14px;width:44px;height:44px;border-radius:12px;border:1px solid var(--rule);background:var(--card);font-size:18px;cursor:pointer;color:var(--ink-soft)}
+  .steps{list-style:none;margin:18px 0;padding:0}
+  .steps li{display:grid;grid-template-columns:26px 1fr;gap:12px;padding:10px 0;position:relative}
+  .steps li::before{content:'';position:absolute;left:12px;top:36px;bottom:-6px;width:2px;background:var(--rule)}
+  .steps li:last-child::before{display:none}
+  .dot{width:26px;height:26px;border-radius:50%;background:var(--paid);color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center}
+  .dot.wait{background:var(--open-bg);color:var(--open);border:2px solid var(--open)}
+  .steps b{display:block;font-size:14.5px}
+  .steps span{font-size:13.5px;color:var(--ink-soft)}
+  .rowbtns{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 22px;border-radius:12px;font-size:14.5px;opacity:0;transition:opacity .25s,transform .25s;z-index:99}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  a.xlink{color:var(--brass-deep);text-decoration:underline;text-underline-offset:3px}
+  .masked{letter-spacing:2px}
+  footer{margin-top:36px;color:var(--ink-faint);font-size:13px}
+  footer a{color:var(--ink-soft)}
+  @media (max-width:960px){
+    .shell{grid-template-columns:1fr}
+    .rail{flex-direction:row;align-items:center;flex-wrap:wrap;padding:16px}
+    .rail .foot,.tag{display:none}
+    .nav{display:flex}
+    main{padding:20px 16px 48px}
+    .figures{grid-template-columns:1fr 1fr}
+    .fig:nth-child(3){border-left:none}
+    .grid2{grid-template-columns:1fr}
+    td:nth-child(4),th:nth-child(4){display:none}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="rail" aria-label="Bursar">
+    <div>
+      <p class="brand">Bursar<em>.</em></p>
+      <p class="tag">The cash register for AI agents</p>
+    </div>
+    <nav class="nav" aria-label="Sections">
+      <a href="#" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16M6 16l1.5-9h9L18 16M9 16v-4h6v4"/></svg>Ledger</a>
+      <a href="#how"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5l3 2"/></svg>How it works</a>
+      <a href="#api"><svg viewBox="0 0 24  fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg>For developers</a>
+    </nav>
+    <div class="foot">
+      Settled on Tempo · stablecoin gas, half-second receipts
+      <br><span class="net"><i></i>Moderato testnet · chain 42431</span>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <h1>Merchant ledger</h1>
+        <p class="sub">Every time an agent pays your API, Bursar writes the receipt here. Live testnet data.</p>
+      </div>
+      <div class="toolbar">
+        <label class="switch" title="Hide who paid and how much, the way a competitor would see it">
+          <input type="checkbox" id="compview"> Competitor view
+        </label>
+        <button class="btn primary" id="refresh">Refresh</button>
+        <button class="btn" id="export">Export books</button>
+      </div>
+    </div>
+
+    <section class="figures" aria-label="Totals">
+      <div class="fig"><div class="k">Money in</div><div class="v" id="f-in">$0.00</div><div class="d" id="f-in-sub">settled onchain</div></div>
+      <div class="fig"><div class="k">Waiting on</div><div class="v" id="f-open">$0.00</div><div class="d" id="f-open-sub">across 0 open bills</div></div>
+      <div class="fig"><div class="k">Bills paid</div><div class="v" id="f-paid">0</div><div class="d">each one verifiable</div></div>
+      <div class="fig"><div class="k">Typical bill</div><div class="v" id="f-avg">$0.00</div><div class="d">too small for card rails</div></div>
+    </section>
+
+    <section class="panel" aria-label="Invoices">
+      <header>
+        <h2>Bills</h2>
+        <p>Select any row for the full receipt trail.</p>
+      </header>
+      <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Bill</th><th>Status</th><th>Buyer</th><th class="num">Amount</th><th>Settled</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      </div>
+      <div class="empty" id="empty" hidden>No bills yet. When an agent pays this API, its receipt lands here — <strong>try the demo below</strong>.</div>
+    </section>
+
+    <div class="grid2">
+      <section class="panel" id="how" aria-label="How it works">
+        <header><h2>How a sale happens</h2><p>Three steps, no accounts, no keys.</p></header>
+        <ol class="steps" style="padding:6px 22px 18px">
+          <li><span class="dot">1</span><div><b>Agent asks for data</b><span>The API answers “that’ll be $0.01” and hands over a bill number.</span></div></li>
+          <li><span class="dot">2</span><div><b>Agent pays on Tempo</b><span>One stablecoin transfer with the bill number in the memo. Takes about half a second.</span></div></li>
+          <li><span class="dot">3</span><div><b>Bursar writes the receipt</b><span>The payment is checked against the chain, the bill flips to paid, and it shows up here.</span></div></li>
+        </ol>
+      </section>
+      <section class="panel" aria-label="Recent activity">
+        <header><h2>Just happened</h2><p id="feed-note">live</p></header>
+        <ul class="feed" id="feed"></ul>
+      </section>
+    </div>
+
+    <section class="panel" style="margin-top:24px" aria-label="Privacy">
+      <header><h2>What competitors see</h2><p>Flip the toggle above. This is the whole privacy story.</p></header>
+      <div style="padding:18px 22px;font-size:14.5px;color:var(--ink-soft)">
+        <p style="margin:0 0 10px">The blockchain shows money moving between addresses. That part is public and always will be — anyone who tells you otherwise is selling something.</p>
+        <p style="margin:0 0 10px">What it never shows: <strong style="color:var(--ink)">what was bought, which product earns what, or whose strategy is whose.</strong> Every bill number is random. The meaning lives only in your books.</p>
+        <p style="margin:0">And when your accountant asks? One click on <strong style="color:var(--ink)">Export books</strong> hands over every invoice, receipt, and timestamp. Hidden from rivals, open to auditors.</p>
+      </div>
+    </section>
+
+    <section class="panel" id="api" style="margin-top:24px" aria-label="For developers">
+      <header><h2>Sell your own API</h2><p>Two lines. Your buyers can be any agent, anywhere.</p></header>
+      <div style="padding:18px 22px">
+<pre class="mono" style="background:var(--ink);color:#EDE9DC;border-radius:12px;padding:18px;overflow-x:auto">import { bursarPaywall } from './wrap.js';
+
+app.get('/api/data',
+  bursarPaywall({ merchant: YOU, token: pathUSD, price: 10000n }),
+  (req, res) => res.json(yourData()));</pre>
+        <p style="font-size:14px;color:var(--ink-soft)">Full code, contracts, and the demo buyer live in the <a class="xlink" href="https://github.com">open-source repo</a>. Registry contract: <span class="mono" id="reg">0xe138ED601fb64181cF38987a13bfbC94Fcf51066</span></p>
+      </div>
+    </section>
+
+    <footer>Bursar · built for the Colosseum World’s Fair, Tempo track · demo data on Tempo Moderato testnet — worth nothing, proves everything.</footer>
+  </main>
+</div>
+
+<div class="scrim" id="scrim" role="dialog" aria-modal="true" aria-label="Bill details">
+  <div class="modal">
+    <button class="x" id="close" aria-label="Close">×</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const EXPLORER = 'https://explore.tempo.xyz';
+let BILLS = [];
+let competitor = false;
+const $ = (id) => document.getElementById(id);
+const short = (h) => h ? h.slice(0, 6) + '…' + h.slice(-4) : '—';
+const money = (c) => '$' + (Number(c) / 1e6).toFixed(2);
+const when = (t) => t ? new Date(t).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '—';
+const mask = (s) => competitor ? '<span class="masked">••••••</span>' : s;
+
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+async function load(silent) {
+  try {
+    const r = await fetch('/api/invoices');
+    const all = await r.json();
+    const prev = BILLS.length;
+    BILLS = [...(all.paid || []), ...(all.open || [])];
+    render();
+    if (silent && BILLS.length > prev) {
+      const fresh = BILLS.slice(0, BILLS.length - prev);
+      fresh.forEach((b) => { const el = document.querySelector(`tr[data-id="${b.id}"]`); if (el) el.classList.add('fresh'); });
+    }
+  } catch { if (!silent) toast('Could not reach the merchant — is it running?'); }
+}
+
+function render() {
+  const paid = BILLS.filter((b) => b.status === 'paid');
+  const open = BILLS.filter((b) => b.status !== 'paid');
+  const val = (b) => Number(b.amount || 0);
+  const sum = (xs) => xs.reduce((a, b) => a + val(b), 0);
+  $('f-in').textContent = competitor ? '••••' : money(sum(paid));
+  $('f-open').textContent = competitor ? '••••' : money(sum(open));
+  $('f-open-sub').textContent = `across ${open.length} open bill${open.length === 1 ? '' : 's'}`;
+  $('f-paid').textContent = paid.length;
+  $('f-avg').textContent = paid.length ? (competitor ? '••••' : money(Math.round(sum(paid) / paid.length))) : '$0.00';
+
+  const tb = $('rows'); tb.innerHTML = '';
+  $('empty').hidden = BILLS.length > 0;
+  BILLS.forEach((b) => {
+    const tr = document.createElement('tr');
+    tr.dataset.id = b.id;
+    tr.tabIndex = 0;
+    tr.setAttribute('aria-label', `Bill ${short(b.id)}, ${b.status}`);
+    const pill = b.status === 'paid' ? '<span class="pill paid">Paid</span>' : '<span class="pill open">Open</span>';
+    tr.innerHTML = `<td><span class="id">${short(b.id)}</span></td><td>${pill}</td>` +
+      `<td>${mask(`<span class="id">${short(b.buyer || 'agent')}</span>`)}</td>` +
+      `<td class="num">${competitor ? '••••' : money(b.amount)}</td>` +
+      `<td>${b.status === 'paid' ? when(b.paidAt) : '—'}</td>`;
+    const openModal = () => showBill(b.id);
+    tr.addEventListener('click', openModal);
+    tr.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(); } });
+    tb.appendChild(tr);
+  });
+
+  const feed = $('feed'); feed.innerHTML = '';
+  [...BILLS].reverse().slice(0, 6).forEach((b) => {
+    const li = document.createElement('li');
+    li.innerHTML = b.status === 'paid'
+      ? `<time>${when(b.paidAt)}</time>Bill settled — <span class="amt">${competitor ? '••••' : money(b.amount)}</span> from ${mask(`<span class="id">${short(b.buyer || 'agent')}</span>`)}`
+      : `<time>${when(b.createdAt)}</time>New bill opened — <span class="amt">${competitor ? '••••' : money(b.amount)}</span> awaiting payment`;
+    feed.appendChild(li);
+  });
+  if (!BILLS.length) feed.innerHTML = '<li>Nothing yet. Bills appear here the moment agents pay.</li>';
+}
+
+function showBill(id) {
+  const b = BILLS.find((x) => x.id === id);
+  if (!b) return;
+  const paid = b.status === 'paid';
+  $('modal-body').innerHTML =
+    `<p class="pill ${paid ? 'paid' : 'open'}" style="margin:0 0 10px">${paid ? 'Paid' : 'Open'}</p>` +
+    `<h3>Bill ${short(b.id)}</h3>` +
+    `<p class="mono">${b.id}</p>` +
+    `<ol class="steps">` +
+    `<li><span class="dot">✓</span><div><b>Bill opened</b><span>${when(b.createdAt)} · ${competitor ? '••••' : money(b.amount)} · buyer ${mask(`<span class="mono">${short(b.buyer || 'agent')}</span>`)}</span></div></li>` +
+    (paid
+      ? `<li><span class="dot">✓</span><div><b>Paid on Tempo</b><span>${when(b.paidAt)} · receipt <span class="mono">${short(b.receipt)}</span> · <a class="xlink" target="_blank" rel="noopener" href="${EXPLORER}/tx/${b.receipt}">view transaction</a></span></div></li>`
+      : `<li><span class="dot wait">…</span><div><b>Waiting on payment</b><span>Pay ${competitor ? '••••' : money(b.amount)} to the merchant with this bill number in the memo.</span></div></li>`) +
+    `</ol>` +
+    `<div class="rowbtns">` +
+    `<button class="btn" data-copy="${b.id}">Copy bill number</button>` +
+    (paid ? `<a class="btn" target="_blank" rel="noopener" href="${EXPLORER}/tx/${b.receipt}" style="text-decoration:none">Open in explorer</a>` : '') +
+    `</div>`;
+  $('modal-body').querySelector('[data-copy]').addEventListener('click', async (e) => {
+    try { await navigator.clipboard.writeText(b.id); toast('Bill number copied'); }
+    catch { toast('Copy failed — select it manually'); }
+  });
+  $('scrim').classList.add('show');
+  $('close').focus();
+}
+
+$('close').addEventListener('click', () => $('scrim').classList.remove('show'));
+$('scrim').addEventListener('click', (e) => { if (e.target === $('scrim')) $('scrim').classList.remove('show'); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('scrim').classList.remove('show'); });
+$('refresh').addEventListener('click', () => { load(false); toast('Ledger refreshed'); });
+$('export').addEventListener('click', async () => {
+  try {
+    const r = await fetch('/api/export', { headers: { 'X-Bursar-Viewkey': 'demo-view-key' } });
+    if (!r.ok) throw new Error();
+    const blob = await r.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'bursar-books.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast('Books exported — every invoice, receipt, timestamp');
+  } catch { toast('Export needs an auditor view key'); }
+});
+$('compview').addEventListener('change', (e) => {
+  competitor = e.target.checked; render();
+  toast(competitor ? 'Competitor view: parties and amounts hidden' : 'Merchant view: full books');
+});
+
+load(false);
+setInterval(() => load(true), 15000);
+</script>
+</body>
+</html>

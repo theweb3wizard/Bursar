@@ -1,0 +1,18 @@
+# never commit keys, even testnet ones
+.test-wallet
+.test-address
+.merchant2-wallet
+.merchant2-address
+*.key
+.env
+
+# build outputs & deps
+node_modules/
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
