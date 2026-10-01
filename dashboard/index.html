@@ -221,6 +221,10 @@ app.get('/api/data',
 
 <script>
 const EXPLORER = 'https://explore.tempo.xyz';
+// API base: ?api=https://merchant-host (for hosted demo), saved override, or same origin.
+const PARAMS = new URLSearchParams(location.search);
+const API = (PARAMS.get('api') || localStorage.getItem('bursar-api') || '').replace(/\/$/, '');
+if (PARAMS.get('api')) { try { localStorage.setItem('bursar-api', PARAMS.get('api')); } catch {} }
 let BILLS = [];
 let competitor = false;
 const $ = (id) => document.getElementById(id);
@@ -236,7 +240,7 @@ function toast(msg) {
 
 async function load(silent) {
   try {
-    const r = await fetch('/api/invoices');
+    const r = await fetch(API + '/api/invoices');
     const all = await r.json();
     const prev = BILLS.length;
     BILLS = [...(all.paid || []), ...(all.open || [])];
@@ -320,7 +324,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('scrim')
 $('refresh').addEventListener('click', () => { load(false); toast('Ledger refreshed'); });
 $('export').addEventListener('click', async () => {
   try {
-    const r = await fetch('/api/export', { headers: { 'X-Bursar-Viewkey': 'demo-view-key' } });
+    const r = await fetch(API + '/api/export', { headers: { 'X-Bursar-Viewkey': 'demo-view-key' } });
     if (!r.ok) throw new Error();
     const blob = await r.blob();
     const a = document.createElement('a');
