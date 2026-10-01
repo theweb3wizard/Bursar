@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: bursar-merchant
+    runtime: node
+    repo: https://github.com/theweb3wizard/Bursar
+    branch: main
+    rootDir: sdk
+    buildCommand: npm install --no-audit --no-fund
+    startCommand: node server.js
+    autoDeploy: true
+    envVars:
+      - key: MERCHANT
+        sync: false # merchant payout address (0x...)
+      - key: TOKEN
+        value: 0x20c0000000000000000000000000000000000000 # test pathUSD, Moderato
+      - key: PRICE
+        value: 10000
+      - key: PORT
+        fromService:
+          name: bursar-merchant
+          type: web
+          property: port
