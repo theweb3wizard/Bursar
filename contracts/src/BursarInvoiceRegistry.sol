@@ -79,6 +79,34 @@ contract BursarInvoiceRegistry {
     /// @notice Merchant marks an invoice paid, citing the settlement tx hash.
     /// @dev The Bursar SDK verifies the cited tx actually carries this
     ///      invoice id in its TransferWithMemo log before trusting it.
+    /// @notice Merchant opens an invoice with an EXPLICIT id (e.g. the Tempo memo
+    ///         the buyer will attach). Only unused ids accepted; caller is the merchant.
+    function createInvoiceWithId(
+        bytes32 id,
+        address buyer,
+        address token,
+        uint256 amount
+    ) external returns (bytes32) {
+        if (buyer == address(0) || token == address(0)) revert ZeroAddress();
+        if (amount == 0) revert ZeroAmount();
+        if (id == bytes32(0)) revert BadState();
+        if (invoices[id].status != Status.None) revert InvoiceExists();
+        invoices[id] = Invoice({
+            id: id,
+            merchant: msg.sender,
+            buyer: buyer,
+            token: token,
+            amount: amount,
+            createdAt: block.timestamp,
+            paidAt: 0,
+            paymentTxHash: bytes32(0),
+            status: Status.Open
+        });
+        merchantNonce[msg.sender] += 1;
+        emit InvoiceCreated(id, msg.sender, buyer, token, amount);
+        return id;
+    }
+
     function markPaid(bytes32 id, bytes32 paymentTxHash) external {
         Invoice storage inv = invoices[id];
         if (inv.status != Status.Open) revert BadState();

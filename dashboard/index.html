@@ -274,7 +274,7 @@ function render() {
     tr.innerHTML = `<td><span class="id">${short(b.id)}</span></td><td>${pill}</td>` +
       `<td>${mask(`<span class="id">${short(b.buyer || 'agent')}</span>`)}</td>` +
       `<td class="num">${competitor ? '••••' : money(b.amount)}</td>` +
-      `<td>${b.status === 'paid' ? when(b.paidAt) : '—'}</td>`;
+      `<td>${b.status === 'paid' ? (b.blockNumber ? 'block ' + Number(b.blockNumber).toLocaleString() : when(b.paidAt)) : '—'}</td>`;
     const openModal = () => showBill(b.id);
     tr.addEventListener('click', openModal);
     tr.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(); } });
@@ -284,9 +284,10 @@ function render() {
   const feed = $('feed'); feed.innerHTML = '';
   [...BILLS].reverse().slice(0, 6).forEach((b) => {
     const li = document.createElement('li');
+    const t = b.blockNumber ? 'block ' + Number(b.blockNumber).toLocaleString() : when(b.paidAt || b.createdAt);
     li.innerHTML = b.status === 'paid'
-      ? `<time>${when(b.paidAt)}</time>Bill settled — <span class="amt">${competitor ? '••••' : money(b.amount)}</span> from ${mask(`<span class="id">${short(b.buyer || 'agent')}</span>`)}`
-      : `<time>${when(b.createdAt)}</time>New bill opened — <span class="amt">${competitor ? '••••' : money(b.amount)}</span> awaiting payment`;
+      ? `<time>${t}</time>Bill settled — <span class="amt">${competitor ? '••••' : money(b.amount)}</span> from ${mask(`<span class="id">${short(b.buyer || 'agent')}</span>`)}`
+      : `<time>${t}</time>New bill opened — <span class="amt">${competitor ? '••••' : money(b.amount)}</span> awaiting payment`;
     feed.appendChild(li);
   });
   if (!BILLS.length) feed.innerHTML = '<li>Nothing yet. Bills appear here the moment agents pay.</li>';
