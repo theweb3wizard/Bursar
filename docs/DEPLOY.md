@@ -1,31 +1,27 @@
-# Hosting Bursar (merchant API) — Render or Railway, ~10 minutes
+# Hosting Bursar (merchant API)
 
 The merchant is a plain Node server (zero non-viem dependencies). Books live in
 memory: restarts reseed empty, which is fine for the demo and disclosed to judges.
 
-## Render (recommended)
-1. Sign up at render.com → **New → Web Service** → connect the `Bursar` GitHub repo.
-2. Settings: **Root Directory** = `sdk`, **Build Command** = `npm install --no-audit --no-fund`,
-   **Start Command** = `node server.js`. (Or use `render.yaml` blueprint: New → Blueprint → same repo.)
-3. Environment variables:
-   - `MERCHANT` = your payout address (generate one: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`, derive address, keep the key private)
-   - `TOKEN` = `0x20c0000000000000000000000000000000000000` (test pathUSD, Moderato)
-   - `PRICE` = `10000` ($0.01)
-   - Render sets `PORT` itself — the server already honors it.
-4. Fund the merchant address from Tempo's faucet (worthless test tokens):
-   ```bash
-   curl -X POST https://rpc.moderato.tempo.xyz -H 'Content-Type: application/json' \
-     -d '{"jsonrpc":"2.0","method":"tempo_fundAddress","params":["YOUR_ADDRESS"],"id":1}'
-   ```
-5. Open `https://YOUR-SERVICE.onrender.com/health` → `{"ok":true,...}` means live.
-   Cold starts take ~30s on free tier — the dashboard tolerates it (refresh button).
-
-## Railway
+## Option A — Railway (try first, $5 free trial)
 1. railway.app → **New Project → Deploy from GitHub repo** → select `Bursar`.
-2. Service Settings → **Root Directory** = `sdk`. Railway auto-detects Node
-   (`npm install` + `node server.js` — set Start Command explicitly if needed).
-3. Same env vars as above (`MERCHANT`, `TOKEN`, `PRICE`; Railway provides `PORT`).
-4. Same faucet step. **Generate Domain** in Settings → test `/health`.
+2. Service Settings → **Root Directory** = `sdk`. Set **Start Command** = `node server.js`.
+3. Variables: `MERCHANT` = payout address, `TOKEN` = `0x20c0...0000`, `PRICE` = `10000`.
+   (Railway provides `PORT`; the server honors it.)
+4. Fund the address via the faucet (see Render section below), **Generate Domain**,
+   test `/health`. If Railway asks for a card up front, skip to Option B.
+
+## Option B — Hugging Face Spaces (free, no card, Docker)
+1. huggingface.co → New **Space** → SDK **Docker**, port **7860**, Blank template.
+2. Push this repo's files to the Space (or upload `sdk/`, `dashboard/`, `Dockerfile`).
+3. Space Settings → Variables: `MERCHANT`, `TOKEN`, `PRICE` (same values as above).
+4. The Space URL serves the merchant; test `/health`.
+
+## Option C — Render (needs card verification for blueprint use)
+1. render.com → New → **Blueprint** → connect `theweb3wizard/Bursar` (`render.yaml` prefills).
+2. Set `MERCHANT`; `TOKEN`/`PRICE` prefilled; Render provides `PORT`.
+3. Fund + test `/health` as above.
+
 
 ## Point the dashboard at it
 Append `?api=https://YOUR-SERVICE.onrender.com` to the Vercel dashboard URL:
