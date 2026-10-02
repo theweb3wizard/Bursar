@@ -1,6 +1,7 @@
 export default async function handler(req, res) {
   const key = req.headers['x-bursar-viewkey'];
-  if (key !== 'demo-view-key') { res.status(403).json({ error: 'auditor view key required (demo key: demo-view-key)' }); return; }
+  const expected = process.env.VIEW_KEY;
+  if (!expected || key !== expected) { res.status(403).json({ error: 'auditor view key required' }); return; }
   const proto = req.headers['x-forwarded-proto'] || 'https';
   const base = `${proto}://${req.headers.host}`;
   const r = await fetch(base + '/api/invoices');

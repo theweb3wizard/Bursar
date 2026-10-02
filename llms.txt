@@ -1,0 +1,19 @@
+# Bursar — llms.txt
+
+Bursar: invoicing + receivables for AI-agent commerce on Tempo (Colosseum World's Fair, Tempo track).
+
+## Contracts (Tempo Moderato testnet, chain 42431)
+- Registry v2 `0xC3FA070c45F1bDbA8871171F5c950f8C89c0fce1`: `createInvoiceWithId(bytes32,buyer,token,amount)`, `markPaid(bytes32,txHash)`, `getInvoice(bytes32)`. Verified on contracts.tempo.xyz. Non-custodial: never holds funds.
+- Registry v1 `0xe138ED601fb64181cF38987a13bfbC94Fcf51066` (superseded).
+- Test pathUSD `0x20c0000000000000000000000000000000000000` (6 decimals). Faucet: `tempo_fundAddress` RPC.
+- Key primitive: TIP-20 `transferWithMemo(to, amount, memo: bytes32)` emits `TransferWithMemo(from,to,value,memo)` (memo indexed) — the join key for all reconciliation.
+
+## Live endpoints
+- Merchant: `GET /api/price` → 402 challenge | retry with receipt → 200 data.
+- Books: `GET /api/invoices` (chain-derived). Export: `GET /api/export` (auditor view key).
+- Dashboard + threat model + integration guide in repo: `dashboard/`, `docs/THREAT_MODEL.md`, `docs/INTEGRATE.md`.
+
+## Docs
+- https://docs.tempo.xyz/llms.txt (Tempo developer index)
+- https://tempo.xyz/developers/docs/guide/machine-payments/ (MPP charge + session)
+- https://tempo.xyz/developers/docs/guide/payments/transfer-memos (bytes32 memos)

@@ -324,8 +324,20 @@ $('scrim').addEventListener('click', (e) => { if (e.target === $('scrim')) $('sc
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('scrim').classList.remove('show'); });
 $('refresh').addEventListener('click', () => { load(false); toast('Ledger refreshed'); });
 $('export').addEventListener('click', async () => {
+  let key = '';
+  try { key = sessionStorage.getItem('bursar-viewkey') || ''; } catch {}
+  if (!key) {
+    key = window.prompt('Auditor view key (ask the merchant):') || '';
+    if (!key) return;
+    try { sessionStorage.setItem('bursar-viewkey', key); } catch {}
+  }
   try {
-    const r = await fetch(API + '/api/export', { headers: { 'X-Bursar-Viewkey': 'demo-view-key' } });
+    const r = await fetch(API + '/api/export', { headers: { 'X-Bursar-Viewkey': key } });
+    if (r.status === 403) {
+      try { sessionStorage.removeItem('bursar-viewkey'); } catch {}
+      toast('Wrong key — export refused');
+      return;
+    }
     if (!r.ok) throw new Error();
     const blob = await r.blob();
     const a = document.createElement('a');
