@@ -1,7 +1,7 @@
 ﻿{
-    "name":  "sdk",
-    "version":  "1.0.0",
-    "description":  "",
+    "name":  "bursar-sdk",
+    "version":  "0.1.0",
+    "description":  "Invoicing and receivables for AI-agent commerce on Tempo",
     "main":  "index.js",
     "scripts":  {
                     "test":  "echo \"Error: no test specified\" \u0026\u0026 exit 1"
@@ -12,5 +12,8 @@
     "dependencies":  {
                          "viem":  "^2.57.2"
                      },
-    "type":  "module"
+    "type":  "module",
+    "exports":  {
+                    ".":  "./src/index.js"
+                }
 }

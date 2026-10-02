@@ -70,6 +70,7 @@
   .pill{display:inline-block;padding:4px 12px;border-radius:999px;font-size:13px;font-weight:600}
   .pill.paid{background:var(--paid-bg);color:var(--paid)}
   .pill.open{background:var(--open-bg);color:var(--open)}
+  .pill.free{background:var(--paper-deep);color:var(--ink-soft)}
   .empty{padding:36px 22px;color:var(--ink-faint);font-size:14.5px}
   .empty strong{color:var(--ink)}
   @keyframes flash{from{background:#F3EACB}to{background:transparent}}
@@ -290,7 +291,7 @@ function render() {
     tr.dataset.id = b.id;
     tr.tabIndex = 0;
     tr.setAttribute('aria-label', `Bill ${short(b.id)}, ${b.status}`);
-    const pill = b.status === 'paid' ? '<span class="pill paid">Paid</span>' : '<span class="pill open">Open</span>';
+    const pill = b.status === 'paid' ? '<span class="pill paid">Paid</span>' : b.status === 'free' ? '<span class="pill free">Free trial</span>' : '<span class="pill open">Open</span>';
     tr.innerHTML = `<td><span class="id">${short(b.id)}</span></td><td>${pill}</td>` +
       `<td>${mask(`<span class="id">${short(b.buyer || 'agent')}</span>`)}</td>` +
       `<td class="num">${competitor ? '••••' : money(b.amount)}</td>` +
@@ -307,6 +308,8 @@ function render() {
     const t = b.blockNumber ? 'block ' + Number(b.blockNumber).toLocaleString() : when(b.paidAt || b.createdAt);
     li.innerHTML = b.status === 'paid'
       ? `<time>${t}</time>Bill settled — <span class="amt">${competitor ? '••••' : money(b.amount)}</span> from ${mask(`<span class="id">${short(b.buyer || 'agent')}</span>`)}${b.receipt ? ` · <a class="xlink" target="_blank" rel="noopener" href="${EXPLORER}/tx/${b.receipt}">receipt</a>` : ''}`
+      : b.status === 'free'
+      ? `<time>${t}</time>Free trial served — on the house`
       : `<time>${t}</time>New bill opened — <span class="amt">${competitor ? '••••' : money(b.amount)}</span> awaiting payment`;
     feed.appendChild(li);
   });
@@ -317,14 +320,18 @@ function showBill(id) {
   const b = BILLS.find((x) => x.id === id);
   if (!b) return;
   const paid = b.status === 'paid';
+  const pillCls = paid ? 'paid' : b.status === 'free' ? 'free' : 'open';
+  const pillTxt = paid ? 'Paid' : b.status === 'free' ? 'Free trial' : 'Open';
   $('modal-body').innerHTML =
-    `<p class="pill ${paid ? 'paid' : 'open'}" style="margin:0 0 10px">${paid ? 'Paid' : 'Open'}</p>` +
+    `<p class="pill ${pillCls}" style="margin:0 0 10px">${pillTxt}</p>` +
     `<h3>Bill ${short(b.id)}</h3>` +
     `<p class="mono">${b.id}</p>` +
     `<ol class="steps">` +
     `<li><span class="dot">✓</span><div><b>Bill opened</b><span>${when(b.createdAt)} · ${competitor ? '••••' : money(b.amount)} · buyer ${mask(`<span class="mono">${short(b.buyer || 'agent')}</span>`)}</span></div></li>` +
     (paid
-      ? `<li><span class="dot">✓</span><div><b>Paid on Tempo</b><span>${when(b.paidAt)} · receipt <span class="mono">${short(b.receipt)}</span> · <a class="xlink" target="_blank" rel="noopener" href="${EXPLORER}/tx/${b.receipt}">view transaction</a></span></div></li>`
+      ? `<li><span class="dot">✓</span><div><b>Paid on Tempo</b><span>${b.blockNumber ? 'block ' + Number(b.blockNumber).toLocaleString() + ' · ' : ''}receipt <span class="mono">${short(b.receipt)}</span> · <a class="xlink" target="_blank" rel="noopener" href="${EXPLORER}/tx/${b.receipt}">view transaction</a></span></div></li>`
+      : b.status === 'free'
+      ? `<li><span class="dot">✓</span><div><b>Served free</b><span>First-taste trial — no payment taken, on the house.</span></div></li>`
       : `<li><span class="dot wait">…</span><div><b>Waiting on payment</b><span>Pay ${competitor ? '••••' : money(b.amount)} to the merchant with this bill number in the memo.</span></div></li>`) +
     `</ol>` +
     `<div class="rowbtns">` +

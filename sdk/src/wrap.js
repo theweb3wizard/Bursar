@@ -16,12 +16,23 @@ import { newInvoiceId, InvoiceMap } from './memo.js';
  *   MUST check the cited tx carries this invoice id in its TransferWithMemo log.
  * @param {Function} opts.onPaid - async (invoice) => receipt data for the buyer
  */
-export function bursarPaywall({ merchant, token, price, verifyPayment, onPaid }) {
+export function bursarPaywall({ merchant, token, price, verifyPayment, onPaid, freeFirst = 0 }) {
   const invoices = new InvoiceMap();
+  let freeServed = 0;
 
   async function middleware(req, res, next) {
     const receipt = req.headers['x-bursar-receipt'];
     const invoiceId = req.headers['x-bursar-invoice'];
+    // First-N-free trial: merchant eats the cost to remove try-it friction.
+    if (!receipt && !invoiceId && freeServed < freeFirst) {
+      freeServed += 1;
+      const id = 'free-' + freeServed;
+      invoices.map.set(id, { id, merchant, buyer: null, token, amount: '0', unit: 'call', status: 'free', createdAt: Date.now() });
+      req.bursarInvoice = invoices.map.get(id);
+      if (onPaid) { try { req.bursarData = await onPaid(req.bursarInvoice); } catch { /* serve anyway */ } }
+      next();
+      return;
+    }
     if (!receipt || !invoiceId) {
       const id = newInvoiceId();
       invoices.open({ id, merchant, buyer: null, token, amount: String(price), unit: 'call' });
