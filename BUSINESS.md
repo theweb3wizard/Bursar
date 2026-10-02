@@ -40,6 +40,11 @@ We will not project merchant counts we haven't talked to.
 3. **Billing primitive (Q1):** subscriptions via smart-account pulls; settlement-history
    API that third-party underwriters can build on (optionality, not a lending pitch).
 
+## Cost proof (measured Oct 3, Moderato tx 0x86368b96…)
+- Chain fee per $0.01 sale: **18 base units = $0.000018**. Vercel Hobby + public RPC: $0.
+- True cost per invoice: **≈$0.00002**. At 10K invoices/mo the chain bill is $0.20.
+  (Replaces all margin estimates — this is measured, not modeled.)
+
 ## Moat (wedge, not handwave)
 Tempo-native depth (sessions, memos, fee sponsorship, zero-gas buyers) + live
 settlement history no fork can backdate. "Don't trust our deck. Query our contract."
