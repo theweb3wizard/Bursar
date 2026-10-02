@@ -1,7 +1,7 @@
 import { createPublicClient, http, keccak256, toHex } from 'viem';
 
 const RPC = process.env.TEMPO_RPC || 'https://rpc.moderato.tempo.xyz';
-const REGISTRY = process.env.REGISTRY || '0xe138ED601fb64181cF38987a13bfbC94Fcf51066';
+const REGISTRY = process.env.REGISTRY || '0xC3FA070c45F1bDbA8871171F5c950f8C89c0fce1'; // v2 canonical
 const MERCHANT = (process.env.MERCHANT || '').toLowerCase();
 
 const pub = createPublicClient({ transport: http(RPC) });
@@ -13,7 +13,7 @@ const invoiceAbi = [
     outputs: [{ name: '', type: 'tuple',
       components: [
         { name: 'id', type: 'bytes32' }, { name: 'merchant', type: 'address' },
-        { name: 'buyer', type: 'address' }, { name: 'token', type: 'string' },
+        { name: 'buyer', type: 'address' }, { name: 'token', type: 'address' },
         { name: 'amount', type: 'uint256' }, { name: 'createdAt', type: 'uint256' },
         { name: 'paidAt', type: 'uint256' }, { name: 'paymentTxHash', type: 'bytes32' },
         { name: 'status', type: 'uint8' },
@@ -26,11 +26,18 @@ export default async function handler(req, res) {
     const latest = await pub.getBlockNumber();
     const fromReg = latest > 50000n ? latest - 50000n : 0n;
     const fromPay = latest > 4000n ? latest - 4000n : 0n; // ~30 min of Tempo blocks; RPC caps results
-    const [regLogs, payLogs] = await Promise.all([
+    // NOTE: viem drops `null` topic wildcards on this RPC (serializes topics:[]),
+    // so filter by event sig and shrink the window on cap errors, then match `to` client-side.
+    let payLogs = [];
+    for (const span of [4000n, 2000n, 1000n, 400n]) {
+      try {
+        const from = latest > span ? latest - span : 0n;
+        payLogs = await pub.getLogs({ address: process.env.TOKEN || '0x20c0000000000000000000000000000000000000', topics: [MEMO_SIG], fromBlock: from, toBlock: 'latest' });
+        break;
+      } catch (e) { console.error('payLogs span failed', String(e).slice(0, 120)); payLogs = []; }
+    }
+    const [regLogs] = await Promise.all([
       pub.getLogs({ address: REGISTRY, topics: [CREATED], fromBlock: fromReg, toBlock: 'latest' }),
-      MERCHANT
-        ? pub.getLogs({ address: process.env.TOKEN || '0x20c0000000000000000000000000000000000000', topics: [MEMO_SIG], fromBlock: fromPay, toBlock: 'latest' }).catch((e) => { console.error('payLogs failed', String(e).slice(0, 300)); return []; })
-        : Promise.resolve([]),
     ]);
     const logs = regLogs;
     const ids = [];
