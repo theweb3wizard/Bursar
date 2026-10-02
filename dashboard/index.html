@@ -195,6 +195,22 @@
       </div>
     </section>
 
+    <section class="panel" id="proof" style="margin-top:24px" aria-label="Proof">
+      <header><h2>Don't trust the deck</h2><p>Every number below resolves to a chain record.</p></header>
+      <div style="padding:18px 22px;font-size:14.5px">
+        <div class="figures" style="margin:0 0 16px" id="proof-figs">
+          <div class="fig"><div class="k">Settled sales</div><div class="v" id="p-tx">—</div><div class="d">on Tempo Moderato</div></div>
+          <div class="fig"><div class="k">Volume</div><div class="v" id="p-vol">—</div><div class="d">in test stablecoins</div></div>
+          <div class="fig"><div class="k">Unique payers</div><div class="v" id="p-payers">—</div><div class="d">distinct buyer wallets</div></div>
+          <div class="fig"><div class="k">Settlement time</div><div class="v">~0.5<small>s</small></div><div class="d">no re-orgs, deterministic finality</div></div>
+        </div>
+        <p style="margin:0;color:var(--ink-soft)">Registry contract
+          <a class="xlink mono" target="_blank" rel="noopener" href="https://explore.tempo.xyz/address/0xC3FA070c45F1bDbA8871171F5c950f8C89c0fce1">0xC3FA…0fce1</a>
+          (verified source) · settlement asset pathUSD
+          <span class="mono">0x20c0…0000</span> · fee per sale: sub-cent, paid in stablecoins · <a class="xlink" href="https://github.com/theweb3wizard/Bursar">open-source repo</a></p>
+      </div>
+    </section>
+
     <section class="panel" id="api" style="margin-top:24px" aria-label="For developers">
       <header><h2>Sell your own API</h2><p>Two lines. Your buyers can be any agent, anywhere.</p></header>
       <div style="padding:18px 22px">
@@ -262,6 +278,10 @@ function render() {
   $('f-open-sub').textContent = `across ${open.length} open bill${open.length === 1 ? '' : 's'}`;
   $('f-paid').textContent = paid.length;
   $('f-avg').textContent = paid.length ? (competitor ? '••••' : money(Math.round(sum(paid) / paid.length))) : '$0.00';
+  const payers = new Set(paid.map((b) => (b.buyer || 'agent').toLowerCase()));
+  $('p-tx').textContent = paid.length;
+  $('p-vol').textContent = competitor ? '••••' : money(sum(paid));
+  $('p-payers').textContent = payers.size;
 
   const tb = $('rows'); tb.innerHTML = '';
   $('empty').hidden = BILLS.length > 0;
@@ -286,7 +306,7 @@ function render() {
     const li = document.createElement('li');
     const t = b.blockNumber ? 'block ' + Number(b.blockNumber).toLocaleString() : when(b.paidAt || b.createdAt);
     li.innerHTML = b.status === 'paid'
-      ? `<time>${t}</time>Bill settled — <span class="amt">${competitor ? '••••' : money(b.amount)}</span> from ${mask(`<span class="id">${short(b.buyer || 'agent')}</span>`)}`
+      ? `<time>${t}</time>Bill settled — <span class="amt">${competitor ? '••••' : money(b.amount)}</span> from ${mask(`<span class="id">${short(b.buyer || 'agent')}</span>`)}${b.receipt ? ` · <a class="xlink" target="_blank" rel="noopener" href="${EXPLORER}/tx/${b.receipt}">receipt</a>` : ''}`
       : `<time>${t}</time>New bill opened — <span class="amt">${competitor ? '••••' : money(b.amount)}</span> awaiting payment`;
     feed.appendChild(li);
   });
