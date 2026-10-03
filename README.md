@@ -14,7 +14,7 @@ settled on [Tempo](https://tempo.xyz) (chain 4217) via the Machine Payments Prot
 
 *Built for the Colosseum Crypto World's Fair hackathon — Tempo track.*
 
-[Live dashboard](#links) · [Run it](#run-it-testnet) · [How a sale happens](#how-a-sale-happens) · [Privacy](#privacy-honestly)
+[Live dashboard](#links) · [Run it](#run-it-testnet) · [How a sale happens](#how-a-sale-happens) · [Privacy](#privacy-honestly) · [Deep explainer](docs/BURSAR_EXPLAINED.md)
 
 </div>
 
