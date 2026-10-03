@@ -220,7 +220,7 @@
 app.get('/api/data',
   bursarPaywall({ merchant: YOU, token: pathUSD, price: 10000n }),
   (req, res) => res.json(yourData()));</pre>
-        <p style="font-size:14px;color:var(--ink-soft)">Full code, contracts, and the demo buyer live in the <a class="xlink" href="https://github.com">open-source repo</a>. Registry contract: <span class="mono" id="reg">0xe138ED601fb64181cF38987a13bfbC94Fcf51066</span></p>
+        <p style="font-size:14px;color:var(--ink-soft)">Full code, contracts, and the demo buyer live in the <a class="xlink" href="https://github.com">open-source repo</a>. Registry contract: <span class="mono" id="reg">0xC3FA070c45F1bDbA8871171F5c950f8C89c0fce1</span></p>
       </div>
     </section>
 
@@ -237,7 +237,7 @@ app.get('/api/data',
 <div class="toast" id="toast" role="status"></div>
 
 <script>
-const EXPLORER = 'https://explore.tempo.xyz';
+const EXPLORER = 'https://explore.testnet.tempo.xyz';
 // API base: ?api=https://merchant-host (for hosted demo), saved override, or same origin.
 const PARAMS = new URLSearchParams(location.search);
 const API = (PARAMS.get('api') || localStorage.getItem('bursar-api') || '').replace(/\/$/, '');
