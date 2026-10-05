@@ -161,7 +161,7 @@
     <section class="panel" aria-label="Invoices">
       <header>
         <h2>Bills</h2>
-        <p>Select any row for the full receipt trail.</p>
+        <p>Recent sales, live from chain logs. Older history lives in the totals below.</p>
       </header>
       <div style="overflow-x:auto">
       <table>
@@ -169,7 +169,7 @@
         <tbody id="rows"></tbody>
       </table>
       </div>
-      <div class="empty" id="empty" hidden>No bills yet. When an agent pays this API, its receipt lands here — <strong>try the demo below</strong>.</div>
+      <div class="empty" id="empty" hidden>No recent bills — sales older than ~30 minutes live on in the all-time totals below. When an agent pays this API, its receipt lands here — <strong>try the demo below</strong>.</div>
     </section>
 
     <div class="grid2">
@@ -197,7 +197,7 @@
     </section>
 
     <section class="panel" id="proof" style="margin-top:24px" aria-label="Proof">
-      <header><h2>Don't trust the deck</h2><p>Every number below resolves to a chain record.</p></header>
+      <header><h2>Don't trust the deck</h2><p>All-time totals. Every number below resolves to a chain record.</p></header>
       <div style="padding:18px 22px;font-size:14.5px">
         <div class="figures" style="margin:0 0 16px" id="proof-figs">
           <div class="fig"><div class="k">Settled sales</div><div class="v" id="p-tx">—</div><div class="d">on Tempo Moderato</div></div>
