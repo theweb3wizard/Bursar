@@ -86,7 +86,28 @@ export default async function handler(req, res) {
       });
     }
     const merged = [...byId.values()];
-    res.status(200).json({ open: merged.filter((i) => i.status === 'open'), paid: merged.filter((i) => i.status === 'paid') });
+    // All-time stats via Tempo's indexed Transfers API (full history, no block windows).
+    // Public tier: 20 req/min per IP — one call per books read, same cadence as before.
+    let stats = null;
+    try {
+      const tq = `https://api.tempo.xyz/v1/transfers?recipient=${MERCHANT}&token=${process.env.TOKEN || '0x20c0000000000000000000000000000000000000'}&chainId=testnet&limit=50&order=desc&include=totalCount`;
+      let cursor = null, volume = 0n, payers = new Set(), count = 0, total = 0, pages = 0;
+      do {
+        const url = cursor ? tq + `&cursor=${encodeURIComponent(cursor)}` : tq;
+        const r = await (await fetch(url)).json();
+        total = r.totalCount ?? total;
+        for (const t of r.data || []) {
+          if (!t.sender || /^0x0+$/.test(t.sender)) continue; // faucet mints are not sales
+          count++;
+          volume += BigInt(t.sourceAmount?.baseUnits || 0);
+          payers.add((t.sender || '').toLowerCase());
+        }
+        cursor = r.nextCursor || null;
+        pages++;
+      } while (cursor && pages < 10);
+      stats = { allTimeSales: total || count, allTimeVolume: volume.toString(), allTimePayers: payers.size };
+    } catch (e) { console.error('transfers stats failed', String(e).slice(0, 120)); stats = null; }
+    res.status(200).json({ open: merged.filter((i) => i.status === 'open'), paid: merged.filter((i) => i.status === 'paid'), stats });
   } catch (e) {
     res.status(500).json({ error: 'chain read failed', detail: String(e).slice(0, 200) });
   }

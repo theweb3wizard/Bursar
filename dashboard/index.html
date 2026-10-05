@@ -261,6 +261,7 @@ async function load(silent) {
     const all = await r.json();
     const prev = BILLS.length;
     BILLS = [...(all.paid || []), ...(all.open || [])];
+    window.BURSAR_STATS = all.stats || null;
     render();
     if (silent && BILLS.length > prev) {
       const fresh = BILLS.slice(0, BILLS.length - prev);
@@ -280,9 +281,10 @@ function render() {
   $('f-paid').textContent = paid.length;
   $('f-avg').textContent = paid.length ? (competitor ? '••••' : money(Math.round(sum(paid) / paid.length))) : '$0.00';
   const payers = new Set(paid.map((b) => (b.buyer || 'agent').toLowerCase()));
-  $('p-tx').textContent = paid.length;
-  $('p-vol').textContent = competitor ? '••••' : money(sum(paid));
-  $('p-payers').textContent = payers.size;
+  const stats = window.BURSAR_STATS;
+  $('p-tx').textContent = stats && stats.allTimeSales ? stats.allTimeSales : paid.length;
+  $('p-vol').textContent = stats && stats.allTimeVolume ? (competitor ? '••••' : money(stats.allTimeVolume)) : (competitor ? '••••' : money(sum(paid)));
+  $('p-payers').textContent = stats && stats.allTimePayers ? stats.allTimePayers : payers.size;
 
   const tb = $('rows'); tb.innerHTML = '';
   $('empty').hidden = BILLS.length > 0;
