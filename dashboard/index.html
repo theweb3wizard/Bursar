@@ -161,7 +161,7 @@
     <section class="panel" aria-label="Invoices">
       <header>
         <h2>Bills</h2>
-        <p>Every settled sale, live from chain history. Click any row for its receipt.</p>
+        <p id="bills-note">Every settled sale, live from chain history. Click any row for its receipt.</p>
       </header>
       <div style="overflow-x:auto">
       <table>
@@ -170,6 +170,12 @@
       </table>
       </div>
       <div class="empty" id="empty" hidden>No bills yet — when an agent pays this API, its receipt lands here — <strong>try the demo below</strong>.</div>
+      <div id="pager" style="display:none;align-items:center;gap:12px;padding:14px 22px;border-top:1px solid var(--paper-deep);font-size:14px;color:var(--ink-soft)">
+        <span id="showing" aria-live="polite"></span>
+        <span style="flex:1"></span>
+        <button class="btn" id="less" hidden>Show less</button>
+        <button class="btn primary" id="more">Show more</button>
+      </div>
     </section>
 
     <div class="grid2">
@@ -244,6 +250,8 @@ const API = (PARAMS.get('api') || localStorage.getItem('bursar-api') || '').repl
 if (PARAMS.get('api')) { try { localStorage.setItem('bursar-api', PARAMS.get('api')); } catch {} }
 let BILLS = [];
 let competitor = false;
+let visibleCount = 10;
+const PAGE = 10;
 const $ = (id) => document.getElementById(id);
 const short = (h) => h ? h.slice(0, 6) + '…' + h.slice(-4) : '—';
 const money = (c) => '$' + (Number(c) / 1e6).toFixed(2);
@@ -288,7 +296,9 @@ function render() {
 
   const tb = $('rows'); tb.innerHTML = '';
   $('empty').hidden = BILLS.length > 0;
-  BILLS.forEach((b) => {
+  if (visibleCount > BILLS.length) visibleCount = BILLS.length;
+  if (BILLS.length && visibleCount < PAGE) visibleCount = Math.min(PAGE, BILLS.length);
+  BILLS.slice(0, visibleCount).forEach((b) => {
     const tr = document.createElement('tr');
     tr.dataset.id = b.id;
     tr.tabIndex = 0;
@@ -316,6 +326,17 @@ function render() {
     feed.appendChild(li);
   });
   if (!BILLS.length) feed.innerHTML = '<li>Nothing yet. Bills appear here the moment agents pay.</li>';
+
+  const pager = $('pager'), showing = $('showing'), more = $('more'), less = $('less');
+  if (BILLS.length <= PAGE) {
+    pager.style.display = 'none';
+  } else {
+    pager.style.display = 'flex';
+    showing.textContent = `Showing ${Math.min(visibleCount, BILLS.length)} of ${BILLS.length} bills`;
+    more.hidden = visibleCount >= BILLS.length;
+    if (!more.hidden) more.textContent = `Show more (${BILLS.length - visibleCount} remaining)`;
+    less.hidden = visibleCount <= PAGE;
+  }
 }
 
 function showBill(id) {
@@ -352,6 +373,15 @@ $('close').addEventListener('click', () => $('scrim').classList.remove('show'));
 $('scrim').addEventListener('click', (e) => { if (e.target === $('scrim')) $('scrim').classList.remove('show'); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('scrim').classList.remove('show'); });
 $('refresh').addEventListener('click', () => { load(false); toast('Ledger refreshed'); });
+$('more').addEventListener('click', () => {
+  visibleCount = Math.min(visibleCount + PAGE, BILLS.length);
+  render();
+});
+$('less').addEventListener('click', () => {
+  visibleCount = PAGE;
+  render();
+  document.getElementById('rows').scrollIntoView({ block: 'nearest' });
+});
 $('export').addEventListener('click', async () => {
   let key = '';
   try { key = sessionStorage.getItem('bursar-viewkey') || ''; } catch {}
