@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     ok: true,
     merchant: process.env.MERCHANT || null,
     price: process.env.PRICE || null,
-    registry: process.env.REGISTRY || '0xe138ED601fb64181cF38987a13bfbC94Fcf51066',
+    registry: process.env.REGISTRY || '0xC3FA070c45F1bDbA8871171F5c950f8C89c0fce1',
     chain: 'Tempo Moderato 42431',
   });
 }
