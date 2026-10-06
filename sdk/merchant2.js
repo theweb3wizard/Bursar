@@ -18,7 +18,7 @@ const paywall = bursarPaywall({
   merchant: MERCHANT,
   token: TOKEN,
   price: PRICE,
-  verifyPayment: (invoiceId, txHash) => verifyPayment({ token: TOKEN, invoiceId, txHash, minAmount: PRICE }),
+  verifyPayment: (invoiceId, txHash) => verifyPayment({ token: TOKEN, merchant: MERCHANT, invoiceId, txHash, minAmount: PRICE }),
   onPaid: async () => ({ product: PRODUCT, result: 'hola mundo (demo translation)', ts: Date.now() }),
 });
 

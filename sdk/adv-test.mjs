@@ -67,6 +67,13 @@ const c6 = await challenge();
 r = await call('/api/price', { 'X-Bursar-Invoice': c6.memo, 'X-Bursar-Receipt': '0x' + '1'.repeat(64) });
 verdict('T6 garbage receipt', r.code, 402);
 
+// T8: right memo + right amount, WRONG recipient (paid to self, not merchant) — GH issue #6
+const SELF = execSync(`"${forgeBin}" wallet address --private-key ${pk}`, { encoding: 'utf8' }).trim();
+const c8 = await challenge();
+const tx8 = await pay(SELF, c8.price, c8.memo);
+r = await call('/api/price', { 'X-Bursar-Invoice': c8.memo, 'X-Bursar-Receipt': tx8 });
+verdict('T8 wrong recipient', r.code, 402);
+
 // T7: 402 flood — 15 rapid challenges, server must stay up
 let flood402 = 0;
 for (let i = 0; i < 15; i++) {

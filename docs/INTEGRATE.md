@@ -38,7 +38,7 @@ app.get('/api/your-thing',
     token: '0x20c0000000000000000000000000000000000000', // test pathUSD
     price: 10000n,                                       // $0.01
     verifyPayment: (invoiceId, txHash) =>
-      verifyPayment({ token: '0x20c0...0000', invoiceId, txHash, minAmount: 10000n }),
+      verifyPayment({ token: '0x20c0...0000', merchant: 'YOUR_ADDRESS', invoiceId, txHash, minAmount: 10000n }),
   }),
   (req, res) => res.json(yourData()));
 ```

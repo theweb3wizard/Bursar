@@ -13,7 +13,8 @@ import { newInvoiceId, InvoiceMap } from './memo.js';
  * @param {string} opts.token - TIP-20 token address (e.g. test pathUSD)
  * @param {bigint|number|string} opts.price - price per call (base units)
  * @param {Function} opts.verifyPayment - async (invoiceId, txHash) => bool;
- *   MUST check the cited tx carries this invoice id in its TransferWithMemo log.
+ *   MUST check the cited tx carries this invoice id in its TransferWithMemo log
+ *   AND pays at least `price` to `merchant` (reject wrong-recipient logs).
  * @param {Function} opts.onPaid - async (invoice) => receipt data for the buyer
  */
 export function bursarPaywall({ merchant, token, price, verifyPayment, onPaid, freeFirst = 0 }) {
